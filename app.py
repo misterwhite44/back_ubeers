@@ -7,7 +7,7 @@ from mysql.connector import Error
 app = Flask(__name__)
 
 CORS(app, resources={r"/*": {"origins": "https://ubeer-jade.vercel.app"}})
-
+#CORS(app, resources={r"/*": {"origins": "https://localhost:3000"}})
 api = Api(app, version='1.0', title='Ubeers API',
           description='API for managing beers, breweries, deliveries, and users')
 
@@ -214,6 +214,42 @@ class BreweriesList(Resource):
                     brewery['image_url'] = brewery['image_url']
             
             return jsonify(breweries)
+        except Error as e:
+            return {'error': str(e)}, 500
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+
+    @ns_breweries.doc('add_brewery')
+    @ns_breweries.expect(brewery_model)
+    def post(self):
+        """
+        Add a new brewery to the database
+        """
+        data = request.json
+        
+        # Validation des données
+        name = data.get('name')
+        description = data.get('description')
+        location = data.get('location')
+        image_url = data.get('image_url')
+        
+        if not name:
+            return {'error': 'The field "name" is required.'}, 400
+        
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor()
+            cursor.execute(
+                """
+                INSERT INTO breweries (name, description, location, image_url)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (name, description, location, image_url)
+            )
+            connection.commit()
+            return {'message': 'Brewery added successfully'}, 201
         except Error as e:
             return {'error': str(e)}, 500
         finally:
