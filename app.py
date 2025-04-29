@@ -6,8 +6,8 @@ from mysql.connector import Error
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "https://ubeer-jade.vercel.app"}})
-#CORS(app, resources={r"/*": {"origins": "https://localhost:3000"}})
+#CORS(app, resources={r"/*": {"origins": "https://ubeer-jade.vercel.app"}})
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 api = Api(app, version='1.0', title='Ubeers API',
           description='API for managing beers, breweries, deliveries, and users')
 
