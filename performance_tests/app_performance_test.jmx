@@ -1,0 +1,40 @@
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.4.1">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Test Plan" enabled="true">
+      <stringProp name="TestPlan.comments"></stringProp>
+      <boolProp name="TestPlan.user_defined_variables"></boolProp>
+      <elementProp name="TestPlan.userDefinedVariables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+      <stringProp name="TestPlan.jmeter.save.saveservice.output_format">xml</stringProp>
+      <stringProp name="TestPlan.jmeter.save.saveservice.output_format">csv</stringProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group" enabled="true">
+        <stringProp name="ThreadGroup.num_threads">10</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">1</stringProp>
+        <stringProp name="ThreadGroup.duration">60</stringProp>
+        <stringProp name="ThreadGroup.delay">0</stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <HttpSampler guiclass="HttpTestSampleGui" testclass="HttpTestSample" testname="HTTP Request" enabled="true">
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">5000</stringProp>
+          <stringProp name="HTTPSampler.protocol">HTTP</stringProp>
+          <stringProp name="HTTPSampler.path">/</stringProp>
+          <stringProp name="HTTPSampler.method">GET</stringProp>
+        </HttpSampler>
+        <hashTree>
+          <ResponseAssertion guiclass="ResponseAssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
+            <collectionProp name="ResponseAssertion.result_field">
+              <stringProp name="1">Assertion.response_data</stringProp>
+            </collectionProp>
+            <stringProp name="ResponseAssertion.test_field">Response Code</stringProp>
+            <stringProp name="ResponseAssertion.test_type">1</stringProp>
+            <stringProp name="ResponseAssertion.test_string">200</stringProp>
+          </ResponseAssertion>
+        </hashTree>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
