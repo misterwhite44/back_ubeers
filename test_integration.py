@@ -7,7 +7,6 @@ class TestIntegrationAPI(unittest.TestCase):
         self.app.testing = True
 
     def test_full_beer_workflow(self):
-        # Add a new beer
         new_beer = {
             "name": "Integration Beer",
             "description": "A beer for integration testing",
@@ -16,16 +15,14 @@ class TestIntegrationAPI(unittest.TestCase):
             "image_url": "http://example.com/integration_beer.jpg"
         }
         add_response = self.app.post('/beers/', json=new_beer)
-        self.assertEqual(add_response.status_code, 201)  # Changed to 201
+        self.assertEqual(add_response.status_code, 201)  
 
-        # Get all beers and verify the new beer is present
         get_response = self.app.get('/beers/')
         self.assertEqual(get_response.status_code, 200)
         self.assertIsInstance(get_response.json, list)
         self.assertTrue(any(beer['name'] == "Integration Beer" for beer in get_response.json))
 
     def test_full_brewery_workflow(self):
-        # Add a new brewery
         new_brewery = {
             "name": "Integration Brewery",
             "description": "A brewery for integration testing",
@@ -33,9 +30,8 @@ class TestIntegrationAPI(unittest.TestCase):
             "image_url": "http://example.com/integration_brewery.jpg"
         }
         add_response = self.app.post('/breweries/', json=new_brewery)
-        self.assertEqual(add_response.status_code, 201)  # Changed to 201
+        self.assertEqual(add_response.status_code, 201)  
 
-        # Get all breweries and verify the new brewery is present
         get_response = self.app.get('/breweries/')
         self.assertEqual(get_response.status_code, 200)
         self.assertIsInstance(get_response.json, list)
