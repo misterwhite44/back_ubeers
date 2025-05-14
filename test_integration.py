@@ -59,7 +59,7 @@ class TestIntegrationAPI(unittest.TestCase):
         print(f"GET /deliveries/ status: {get_response.status_code}")
         self.assertEqual(get_response.status_code, 200)
         self.assertIsInstance(get_response.json, list)
-        print("✔️ Deliveries retrieved successfully.")
+        print("Deliveries retrieved successfully.")
 
 if __name__ == '__main__':
     unittest.main()
