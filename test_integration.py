@@ -16,9 +16,8 @@ def client():
 def reset_database(client):
     try:
         logger.info("Resetting the database...")
-        # Assurez-vous que la route /reset est définie dans votre app Flask.
         res = client.post('/reset/')
-        assert res.status_code == 200  # Vérifiez que le reset renvoie un code de succès
+        assert res.status_code == 200, "Database reset failed"
         logger.info("Database reset completed.")
     except Exception as e:
         logger.warning(f"Database reset failed: {e}")
@@ -52,66 +51,51 @@ def create_beer(client, brewery_id=1, name="Integration Beer"):
 
 def test_create_and_get_beer(client):
     logger.info("Running test_create_and_get_beer...")
-    create_brewery(client)  # Créer une brasserie
-    res = create_beer(client)  # Créer une bière
-    if res.status_code == 201:
-        logger.info("Beer creation successful with status code 201")
-    else:
-        logger.error(f"Beer creation failed with status code {res.status_code}")
-        return
+    assert create_brewery(client).status_code == 201, "Failed to create brewery"
+    res = create_beer(client)
+    assert res.status_code == 201, "Failed to create beer"
 
     res = client.get('/beers/')
-    if res.status_code == 200:
-        logger.info("GET /beers/ successful with status code 200")
-    else:
-        logger.error(f"GET /beers/ failed with status code {res.status_code}")
-        return
-    
+    assert res.status_code == 200, "GET /beers/ failed"
     beers = res.get_json()
-    if any(b["name"] == "Integration Beer" for b in beers):
-        logger.info("Beer found in GET /beers/ response")
-    else:
-        logger.error("Beer not found in GET /beers/ response")
+    assert isinstance(beers, list), "Expected list of beers"
+    assert any(b["name"] == "Integration Beer" for b in beers), "Beer not found"
 
+def test_beer_creation_missing_name(client):
+    logger.info("Running test_beer_creation_missing_name...")
+    create_brewery(client)
+    res = client.post('/beers/', json={
+        "description": "Missing name",
+        "price": 4.5,
+        "brewery_id": 1,
+        "image_url": "http://example.com/beer.jpg"
+    })
+    assert res.status_code in [400, 422], f"Expected 400 or 422, got {res.status_code}"
 
 # === TESTS BREWERIES ===
 
 def test_create_and_get_brewery(client):
     logger.info("Running test_create_and_get_brewery...")
     res = create_brewery(client)
-    if res.status_code == 201:
-        logger.info("Brewery creation successful with status code 201")
-    else:
-        logger.error(f"Brewery creation failed with status code {res.status_code}")
-        return
+    assert res.status_code == 201, "Brewery creation failed"
 
     res = client.get('/breweries/')
-    if res.status_code == 200:
-        logger.info("GET /breweries/ successful with status code 200")
-    else:
-        logger.error(f"GET /breweries/ failed with status code {res.status_code}")
-        return
-    
+    assert res.status_code == 200, "GET /breweries/ failed"
     breweries = res.get_json()
-    if any(b["name"] == "Integration Brewery" for b in breweries):
-        logger.info("Brewery found in GET /breweries/ response")
-    else:
-        logger.error("Brewery not found in GET /breweries/ response")
+    assert isinstance(breweries, list), "Expected list of breweries"
+    assert any(b["name"] == "Integration Brewery" for b in breweries), "Brewery not found"
 
+def test_duplicate_brewery_name(client):
+    logger.info("Running test_duplicate_brewery_name...")
+    assert create_brewery(client, name="Dup").status_code == 201
+    res = create_brewery(client, name="Dup")
+    assert res.status_code in [400, 409], f"Expected 400 or 409, got {res.status_code}"
 
 # === TESTS DELIVERIES ===
 
 def test_get_deliveries(client):
     logger.info("Running test_get_deliveries...")
     res = client.get('/deliveries/')
-    if res.status_code == 200:
-        logger.info("GET /deliveries/ successful with status code 200")
-    else:
-        logger.error(f"GET /deliveries/ failed with status code {res.status_code}")
-        return
-    
+    assert res.status_code == 200, "GET /deliveries/ failed"
     deliveries = res.get_json()
-    if isinstance(deliveries, list):
-        logger.info("GET /deliveries/ response is a list")
-    else:
-        logger.error("GET /deliveries/ response is not a list")
+    assert isinstance(deliveries, list), "Expected list of deliveries"
