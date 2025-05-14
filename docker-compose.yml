@@ -1,0 +1,28 @@
+version: '3.7'
+
+services:
+  flask-api:
+    build:
+      context: ./back_ubeers  # Assurez-vous que le répertoire de votre API est correct
+    ports:
+      - "5000:5000"  # expose l'API Flask sur le port 5000
+    environment:
+      - FLASK_ENV=development  # ou toute autre variable d'environnement
+    networks:
+      - app-network
+    command: python3 app.py  # Démarre l'API Flask
+
+  zaproxy:
+    image: ghcr.io/zaproxy/zaproxy:stable
+    depends_on:
+      - flask-api
+    ports:
+      - "8080:8080"  # expose ZAP Proxy UI si tu veux l'utiliser en mode interactif
+    entrypoint: >
+      /zap/zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
