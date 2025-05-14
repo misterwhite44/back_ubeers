@@ -1,0 +1,20 @@
+2025-05-13 11:10:21,673 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2025-05-13 11:10:21,702 INFO o.a.j.JMeter: Loading user properties from: C:\Users\Client\jmeter\apache-jmeter-5.6.3\apache-jmeter-5.6.3\bin\user.properties
+2025-05-13 11:10:21,703 INFO o.a.j.JMeter: Loading system properties from: C:\Users\Client\jmeter\apache-jmeter-5.6.3\apache-jmeter-5.6.3\bin\system.properties
+2025-05-13 11:10:21,714 INFO o.a.j.JMeter: Copyright (c) 1998-2024 The Apache Software Foundation
+2025-05-13 11:10:21,714 INFO o.a.j.JMeter: Version 5.6.3
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: java.version=21.0.5
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: java.vm.name=Java HotSpot(TM) 64-Bit Server VM
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: os.name=Windows 10
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: os.arch=amd64
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: os.version=10.0
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: file.encoding=UTF-8
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: java.awt.headless=null
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: Max memory     =1073741824
+2025-05-13 11:10:21,715 INFO o.a.j.JMeter: Available Processors =8
+2025-05-13 11:10:21,730 INFO o.a.j.JMeter: Default Locale=English (EN)
+2025-05-13 11:10:21,731 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2025-05-13 11:10:21,731 INFO o.a.j.JMeter: JMeterHome=C:\Users\Client\jmeter\apache-jmeter-5.6.3\apache-jmeter-5.6.3
+2025-05-13 11:10:21,731 INFO o.a.j.JMeter: user.dir  =C:\Users\Client\Documents\CoursB3\back_ubeers
+2025-05-13 11:10:21,731 INFO o.a.j.JMeter: PWD       =C:\Users\Client\Documents\CoursB3\back_ubeers
+2025-05-13 11:10:26,248 INFO o.a.j.JMeter: IP: 192.168.56.1 Name: PC-5CD9268231 FullName: PC-5CD9268231

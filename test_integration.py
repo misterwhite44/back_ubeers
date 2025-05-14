@@ -1,65 +1,79 @@
-import unittest
+import pytest
 from app import app
 
-class TestIntegrationAPI(unittest.TestCase):
-    def setUp(self):
-        self.app = app.test_client()
-        self.app.testing = True
+@pytest.fixture
+def client():
+    app.testing = True
+    client = app.test_client()
+    reset_database(client)
+    return client
 
-    def test_full_beer_workflow(self):
-        print("\n--- Test: Full Beer Workflow ---")
-        new_beer = {
-            "name": "Integration Beer",
-            "description": "A beer for integration testing",
-            "price": 6.99,
-            "brewery_id": 1,
-            "image_url": "http://example.com/integration_beer.jpg"
-        }
-        add_response = self.app.post('/beers/', json=new_beer)
-        print(f"POST /beers/ status: {add_response.status_code}")
-        self.assertEqual(add_response.status_code, 201)
+def reset_database(client):
+    try:
+        client.post('/reset/')
+    except:
+        pass  # Pas grave si pas implémenté
 
-        get_response = self.app.get('/beers/')
-        print(f"GET /beers/ status: {get_response.status_code}")
-        self.assertEqual(get_response.status_code, 200)
-        self.assertIsInstance(get_response.json, list)
+# === UTILITAIRES ===
 
-        if any(beer['name'] == "Integration Beer" for beer in get_response.json):
-            print("Beer added and retrieved successfully.")
-        else:
-            print("Beer not found in list.")
-        self.assertTrue(any(beer['name'] == "Integration Beer" for beer in get_response.json))
+def create_brewery(client, name="Integration Brewery"):
+    return client.post('/breweries/', json={
+        "name": name,
+        "description": "Test brewery",
+        "location": "Test City",
+        "image_url": "http://example.com/brewery.jpg"
+    })
 
-    def test_full_brewery_workflow(self):
-        print("\n--- Test: Full Brewery Workflow ---")
-        new_brewery = {
-            "name": "Integration Brewery",
-            "description": "A brewery for integration testing",
-            "location": "Integration Location",
-            "image_url": "http://example.com/integration_brewery.jpg"
-        }
-        add_response = self.app.post('/breweries/', json=new_brewery)
-        print(f"POST /breweries/ status: {add_response.status_code}")
-        self.assertEqual(add_response.status_code, 201)
+def create_beer(client, brewery_id=1, name="Integration Beer"):
+    return client.post('/beers/', json={
+        "name": name,
+        "description": "Test beer",
+        "price": 5.0,
+        "brewery_id": brewery_id,
+        "image_url": "http://example.com/beer.jpg"
+    })
 
-        get_response = self.app.get('/breweries/')
-        print(f"GET /breweries/ status: {get_response.status_code}")
-        self.assertEqual(get_response.status_code, 200)
-        self.assertIsInstance(get_response.json, list)
+# === TESTS BEERS ===
 
-        if any(brewery['name'] == "Integration Brewery" for brewery in get_response.json):
-            print("Brewery added and retrieved successfully.")
-        else:
-            print("Brewery not found in list.")
-        self.assertTrue(any(brewery['name'] == "Integration Brewery" for brewery in get_response.json))
+def test_create_and_get_beer(client):
+    create_brewery(client)
+    res = create_beer(client)
+    assert res.status_code == 201
 
-    def test_full_delivery_workflow(self):
-        print("\n--- Test: Full Delivery Workflow ---")
-        get_response = self.app.get('/deliveries/')
-        print(f"GET /deliveries/ status: {get_response.status_code}")
-        self.assertEqual(get_response.status_code, 200)
-        self.assertIsInstance(get_response.json, list)
-        print("Deliveries retrieved successfully.")
+    res = client.get('/beers/')
+    assert res.status_code == 200
+    beers = res.get_json()
+    assert any(b["name"] == "Integration Beer" for b in beers)
 
-if __name__ == '__main__':
-    unittest.main()
+def test_beer_creation_missing_name(client):
+    create_brewery(client)
+    res = client.post('/beers/', json={
+        "description": "Missing name",
+        "price": 4.5,
+        "brewery_id": 1,
+        "image_url": "http://example.com/beer.jpg"
+    })
+    assert res.status_code in [400, 422]
+
+# === TESTS BREWERIES ===
+
+def test_create_and_get_brewery(client):
+    res = create_brewery(client)
+    assert res.status_code == 201
+
+    res = client.get('/breweries/')
+    assert res.status_code == 200
+    breweries = res.get_json()
+    assert any(b["name"] == "Integration Brewery" for b in breweries)
+
+def test_duplicate_brewery_name(client):
+    create_brewery(client, name="Dup")
+    res = create_brewery(client, name="Dup")
+    assert res.status_code in [400, 409]
+
+# === TESTS DELIVERIES ===
+
+def test_get_deliveries(client):
+    res = client.get('/deliveries/')
+    assert res.status_code == 200
+    assert isinstance(res.get_json(), list)
