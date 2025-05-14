@@ -16,7 +16,6 @@ def delete_test_data(client):
     try:
         logger.info("Deleting test data...")
 
-        # Supprimer les brasseries créées pendant les tests avec le nom "Integration Brewery"
         res = client.get('/breweries/')
         assert res.status_code == 200, f"Failed to fetch breweries: {res.status_code}"
         breweries = res.get_json()
@@ -31,7 +30,6 @@ def delete_test_data(client):
                 else:
                     logger.warning(f"Failed to delete brewery {brewery_name}: {delete_res.status_code}")
         
-        # Supprimer les bières créées pendant les tests avec le nom "Integration Beer"
         res = client.get('/beers/')
         assert res.status_code == 200, f"Failed to fetch beers: {res.status_code}"
         beers = res.get_json()
@@ -118,7 +116,7 @@ def test_create_and_get_brewery(client):
     assert isinstance(breweries, list), "Expected list of breweries"
     assert any(b["name"] == "Integration Brewery" for b in breweries), "Brewery not found"
     logger.info("Test 'test_create_and_get_brewery' passed successfully.")
-    delete_test_data(client)  # Supprimer les données après le test
+    delete_test_data(client)  
 
 def test_duplicate_brewery_name(client):
     logger.info("Running test_duplicate_brewery_name...")
@@ -126,7 +124,7 @@ def test_duplicate_brewery_name(client):
     res = create_brewery(client, name="Dup")
     assert res.status_code in [400, 409], f"Expected 400 or 409, got {res.status_code}"
     logger.info("Test 'test_duplicate_brewery_name' passed successfully.")
-    delete_test_data(client)  # Supprimer les données après le test
+    delete_test_data(client)  
 
 # === TESTS DELIVERIES ===
 
@@ -137,4 +135,4 @@ def test_get_deliveries(client):
     deliveries = res.get_json()
     assert isinstance(deliveries, list), "Expected list of deliveries"
     logger.info("Test 'test_get_deliveries' passed successfully.")
-    delete_test_data(client)  # Supprimer les données après le test
+    delete_test_data(client)  
