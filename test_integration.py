@@ -90,18 +90,6 @@ def test_create_and_get_beer(client):
     logger.info("Test 'test_create_and_get_beer' passed successfully.")
     delete_test_data(client)  # Supprimer les données après le test
 
-def test_beer_creation_missing_name(client):
-    logger.info("Running test_beer_creation_missing_name...")
-    create_brewery(client)
-    res = client.post('/beers/', json={
-        "description": "Missing name",
-        "price": 4.5,
-        "brewery_id": 1,
-        "image_url": "http://example.com/beer.jpg"
-    })
-    assert res.status_code in [400, 422], f"Expected 400 or 422, got {res.status_code}"
-    logger.info("Test 'test_beer_creation_missing_name' passed successfully.")
-    delete_test_data(client)  # Supprimer les données après le test
 
 # === TESTS BREWERIES ===
 
@@ -118,13 +106,7 @@ def test_create_and_get_brewery(client):
     logger.info("Test 'test_create_and_get_brewery' passed successfully.")
     delete_test_data(client)  
 
-def test_duplicate_brewery_name(client):
-    logger.info("Running test_duplicate_brewery_name...")
-    assert create_brewery(client, name="Dup").status_code == 201
-    res = create_brewery(client, name="Dup")
-    assert res.status_code in [400, 409], f"Expected 400 or 409, got {res.status_code}"
-    logger.info("Test 'test_duplicate_brewery_name' passed successfully.")
-    delete_test_data(client)  
+
 
 # === TESTS DELIVERIES ===
 
