@@ -282,6 +282,28 @@ class Brewery(Resource):
             if connection.is_connected():
                 cursor.close()
                 connection.close()
+    #delete
+    @ns_breweries.doc('delete_brewery')
+    def delete(self, brewery_id):
+        """
+        Delete a brewery by its ID
+        """
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM breweries WHERE id = %s", (brewery_id,))
+            connection.commit()
+            if cursor.rowcount:
+                return {'message': 'Brewery deleted successfully'}, 200
+            else:
+                return {'message': 'Brewery not found'}, 404
+        except Error as e:
+            return {'error': str(e)}, 500
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+                
 
 @ns_users.route('/')
 class UsersList(Resource):

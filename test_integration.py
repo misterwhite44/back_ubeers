@@ -10,17 +10,46 @@ logger = logging.getLogger(__name__)
 def client():
     app.testing = True
     client = app.test_client()
-    reset_database(client)
     return client
 
-def reset_database(client):
+def delete_test_data(client):
     try:
-        logger.info("Resetting the database...")
-        res = client.post('/reset/')
-        assert res.status_code == 200, "Database reset failed"
-        logger.info("Database reset completed.")
+        logger.info("Deleting test data...")
+
+        # Supprimer les brasseries créées pendant les tests avec le nom "Integration Brewery"
+        res = client.get('/breweries/')
+        assert res.status_code == 200, f"Failed to fetch breweries: {res.status_code}"
+        breweries = res.get_json()
+        for brewery in breweries:
+            brewery_name = brewery['name']
+            if brewery_name == "Integration Brewery":
+                brewery_id = brewery['id']
+                logger.info(f"Deleting brewery with name: {brewery_name} (ID: {brewery_id})")
+                delete_res = client.delete(f'/breweries/{brewery_id}')
+                if delete_res.status_code == 200:
+                    logger.info(f"Brewery with name {brewery_name} deleted successfully.")
+                else:
+                    logger.warning(f"Failed to delete brewery {brewery_name}: {delete_res.status_code}")
+        
+        # Supprimer les bières créées pendant les tests avec le nom "Integration Beer"
+        res = client.get('/beers/')
+        assert res.status_code == 200, f"Failed to fetch beers: {res.status_code}"
+        beers = res.get_json()
+        for beer in beers:
+            beer_name = beer['name']
+            if beer_name == "Integration Beer":
+                beer_id = beer['id']
+                logger.info(f"Deleting beer with name: {beer_name} (ID: {beer_id})")
+                delete_res = client.delete(f'/beers/{beer_id}')
+                if delete_res.status_code == 200:
+                    logger.info(f"Beer with name {beer_name} deleted successfully.")
+                else:
+                    logger.warning(f"Failed to delete beer {beer_name}: {delete_res.status_code}")
+        
+        logger.info("Test data deletion completed.")
     except Exception as e:
-        logger.warning(f"Database reset failed: {e}")
+        logger.warning(f"Failed to delete test data: {e}")
+
 
 # === UTILITAIRES ===
 
@@ -60,6 +89,8 @@ def test_create_and_get_beer(client):
     beers = res.get_json()
     assert isinstance(beers, list), "Expected list of beers"
     assert any(b["name"] == "Integration Beer" for b in beers), "Beer not found"
+    logger.info("Test 'test_create_and_get_beer' passed successfully.")
+    delete_test_data(client)  # Supprimer les données après le test
 
 def test_beer_creation_missing_name(client):
     logger.info("Running test_beer_creation_missing_name...")
@@ -71,6 +102,8 @@ def test_beer_creation_missing_name(client):
         "image_url": "http://example.com/beer.jpg"
     })
     assert res.status_code in [400, 422], f"Expected 400 or 422, got {res.status_code}"
+    logger.info("Test 'test_beer_creation_missing_name' passed successfully.")
+    delete_test_data(client)  # Supprimer les données après le test
 
 # === TESTS BREWERIES ===
 
@@ -84,12 +117,16 @@ def test_create_and_get_brewery(client):
     breweries = res.get_json()
     assert isinstance(breweries, list), "Expected list of breweries"
     assert any(b["name"] == "Integration Brewery" for b in breweries), "Brewery not found"
+    logger.info("Test 'test_create_and_get_brewery' passed successfully.")
+    delete_test_data(client)  # Supprimer les données après le test
 
 def test_duplicate_brewery_name(client):
     logger.info("Running test_duplicate_brewery_name...")
     assert create_brewery(client, name="Dup").status_code == 201
     res = create_brewery(client, name="Dup")
     assert res.status_code in [400, 409], f"Expected 400 or 409, got {res.status_code}"
+    logger.info("Test 'test_duplicate_brewery_name' passed successfully.")
+    delete_test_data(client)  # Supprimer les données après le test
 
 # === TESTS DELIVERIES ===
 
@@ -99,3 +136,5 @@ def test_get_deliveries(client):
     assert res.status_code == 200, "GET /deliveries/ failed"
     deliveries = res.get_json()
     assert isinstance(deliveries, list), "Expected list of deliveries"
+    logger.info("Test 'test_get_deliveries' passed successfully.")
+    delete_test_data(client)  # Supprimer les données après le test
