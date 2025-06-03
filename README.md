@@ -50,7 +50,16 @@ cp .env.example .env
 
 * Modifier le fichier `.env` avec tes paramètres (base de données, clés, etc.)
 
-5. **Lancer l’application**
+
+5. **Cloner le dépôt**
+
+
+6. **Installer Redis**
+
+brew install redis
+Puis lancer la commande : 
+redis-server
+
 
 ```bash
 python app.py
