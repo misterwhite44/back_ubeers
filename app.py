@@ -1,13 +1,22 @@
 from flask import Flask, jsonify, request
 from flask_restx import Api, Resource, fields
 from flask_cors import CORS
+import os
+from dotenv import load_dotenv
 import mysql.connector
 from mysql.connector import Error
 
 app = Flask(__name__)
 
-#CORS(app, resources={r"/*": {"origins": "https://ubeer-jade.vercel.app"}})
 CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 api = Api(app, version='1.0', title='Ubeers API',
           description='API for managing beers, breweries, deliveries, and users')
 
@@ -15,14 +24,14 @@ ns_beers = api.namespace('beers', description='Beer Operations')
 ns_breweries = api.namespace('breweries', description='Brewery Operations')
 ns_users = api.namespace('users', description='User Operations')
 
-DB_HOST = "bwawmx4ntfjwzxxrotz4-mysql.services.clever-cloud.com"
-DB_PORT = 3306
-DB_USER = "uuw6sv5bvs11qa51"
-DB_PASSWORD = "md1HTCoAHEg0s4HbJHGc"
-DB_NAME = "bwawmx4ntfjwzxxrotz4"
-DB_CHARSET = 'utf8mb4'
+load_dotenv()  
 
-
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT"))  
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+DB_CHARSET = os.getenv("DB_CHARSET")
 
 beer_model = api.model('Beer', {
     'name': fields.String(required=True, description='Name of the beer'),
@@ -31,7 +40,6 @@ beer_model = api.model('Beer', {
     'brewery_id': fields.Integer(required=True, description='ID of the brewery'),
     'image_url': fields.String(description='Image URL of the beer')
 })
-
 
 brewery_model = api.model('Brewery', {
     'id': fields.Integer(description='ID of the brewery'),
@@ -50,7 +58,6 @@ user_model = api.model('User', {
 })
 
 def get_db_connection():
-    """Establish and return a database connection."""
     return mysql.connector.connect(
         host=DB_HOST,
         port=DB_PORT,
@@ -59,7 +66,6 @@ def get_db_connection():
         database=DB_NAME,
         charset=DB_CHARSET
     )
-
 
 @ns_beers.route('/')
 class BeersList(Resource):
@@ -73,12 +79,9 @@ class BeersList(Resource):
             cursor = connection.cursor(dictionary=True)
             cursor.execute("SELECT * FROM beers")
             beers = cursor.fetchall()
-            
-            # Vérification que les URLs d'images sont valides
             for beer in beers:
                 if 'image_url' in beer and beer['image_url']:
                     beer['image_url'] = beer['image_url']
-            
             return jsonify(beers)
         except Error as e:
             return {'error': str(e)}, 500
@@ -162,38 +165,23 @@ class Beer(Resource):
                 cursor.close()
                 connection.close()
 
-
-
     @ns_beers.doc('delete_beer')
-
     def delete(self, beer_id):
-   
         try:
             connection = get_db_connection()
             cursor = connection.cursor()
-
-        # Exécution de la requête DELETE pour supprimer la bière avec l'ID spécifié
             cursor.execute("DELETE FROM beers WHERE id = %s", (beer_id,))
-
-        # Validation des changements dans la base de données
             connection.commit()
-
-        # Vérification si une ligne a été affectée, ce qui signifie que la bière a été supprimée
             if cursor.rowcount > 0:
                 return {'message': 'Beer deleted successfully'}, 200
             else:
                 return {'message': 'Beer not found'}, 404
-
         except Error as e:
-        # Si une erreur se produit, on la capture et retourne une erreur serveur
             return {'error': str(e)}, 500
-
         finally:
-        # Fermeture de la connexion et du curseur si la connexion est encore ouverte
             if connection.is_connected():
                 cursor.close()
                 connection.close()
-
 
 @ns_breweries.route('/')
 class BreweriesList(Resource):
@@ -207,12 +195,9 @@ class BreweriesList(Resource):
             cursor = connection.cursor(dictionary=True)
             cursor.execute("SELECT * FROM breweries")
             breweries = cursor.fetchall()
-            
-            # Vérification que les URLs d'images sont valides
             for brewery in breweries:
                 if 'image_url' in brewery and brewery['image_url']:
                     brewery['image_url'] = brewery['image_url']
-            
             return jsonify(breweries)
         except Error as e:
             return {'error': str(e)}, 500
@@ -228,16 +213,12 @@ class BreweriesList(Resource):
         Add a new brewery to the database
         """
         data = request.json
-        
-        # Validation des données
         name = data.get('name')
         description = data.get('description')
         location = data.get('location')
         image_url = data.get('image_url')
-        
         if not name:
             return {'error': 'The field "name" is required.'}, 400
-        
         try:
             connection = get_db_connection()
             cursor = connection.cursor()
@@ -270,7 +251,6 @@ class Brewery(Resource):
             cursor.execute("SELECT * FROM breweries WHERE id = %s", (brewery_id,))
             brewery = cursor.fetchone()
             if brewery:
-                # Vérification que l'URL de l'image est valide
                 if 'image_url' in brewery and brewery['image_url']:
                     brewery['image_url'] = brewery['image_url']
                 return jsonify(brewery)
@@ -282,7 +262,7 @@ class Brewery(Resource):
             if connection.is_connected():
                 cursor.close()
                 connection.close()
-    #delete
+
     @ns_breweries.doc('delete_brewery')
     def delete(self, brewery_id):
         """
@@ -303,7 +283,6 @@ class Brewery(Resource):
             if connection.is_connected():
                 cursor.close()
                 connection.close()
-                
 
 @ns_users.route('/')
 class UsersList(Resource):
@@ -317,10 +296,7 @@ class UsersList(Resource):
             cursor = connection.cursor(dictionary=True)
             cursor.execute("SELECT * FROM users")
             users = cursor.fetchall()
-            
-            # Ajout du log pour vérifier les utilisateurs récupérés
-            print("Utilisateurs récupérés:", users)  # Affiche les utilisateurs dans les logs du serveur
-            
+            print("Utilisateurs récupérés:", users)
             return jsonify(users)
         except Error as e:
             return {'error': str(e)}, 500
@@ -328,7 +304,6 @@ class UsersList(Resource):
             if connection.is_connected():
                 cursor.close()
                 connection.close()
-
 
 @ns_users.route('/<int:user_id>')
 class User(Resource):
@@ -342,7 +317,6 @@ class User(Resource):
             cursor = connection.cursor(dictionary=True)
             cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
             user = cursor.fetchone()
-            
             if user:
                 return jsonify(user)
             else:
@@ -353,8 +327,6 @@ class User(Resource):
             if connection.is_connected():
                 cursor.close()
                 connection.close()
-
-#deliveries
 
 delivery_model = api.model('Delivery', {
     'beer_id': fields.Integer(required=True, description='ID of the beer being delivered'),
@@ -394,18 +366,14 @@ class DeliveriesList(Resource):
         Add a new delivery to the database
         """
         data = request.json
-        
-        # Extraction des données de la livraison
         beer_id = data.get('beer_id')
         quantity = data.get('quantity')
         delivery_address = data.get('delivery_address')
         delivery_date = data.get('delivery_date')
-        status = data.get('status', 'Pending')  # Défaut à "Pending" si non précisé
+        status = data.get('status', 'Pending')
         user_id = data.get('user_id')
-        
         if not beer_id or not quantity or not delivery_address or not delivery_date or not user_id:
             return {'error': 'Tous les champs sont requis'}, 400
-        
         try:
             connection = get_db_connection()
             cursor = connection.cursor()
@@ -495,8 +463,5 @@ class Delivery(Resource):
                 cursor.close()
                 connection.close()
 
-
-
 if __name__ == '__main__':
     app.run(debug=True)
-
