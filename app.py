@@ -2,8 +2,8 @@ from flask import Flask
 from flask_restx import Api
 from flask_cors import CORS
 import redis
+import os
 
-from config import Config
 from models import register_models
 from utils import get_next_id, get_all_items
 
@@ -30,12 +30,8 @@ ns_breweries = api.namespace('breweries', description='Brewery Operations')
 ns_users = api.namespace('users', description='User Operations')
 ns_deliveries = api.namespace('deliveries', description='Delivery Operations')
 
-r = redis.Redis(
-    host=Config.REDIS_HOST,
-    port=Config.REDIS_PORT,
-    db=Config.REDIS_DB,
-    decode_responses=True
-)
+redis_url = os.getenv("REDIS_URL")
+r = redis.Redis.from_url(redis_url, decode_responses=True)
 
 beer_model, brewery_model, user_model, delivery_model = register_models(api)
 
