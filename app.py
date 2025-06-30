@@ -5,7 +5,6 @@ from routes import api as routes_namespace
 import pymysql
 import os
 from dotenv import load_dotenv
-from extensions import redis_client  # <- ici
 
 pymysql.install_as_MySQLdb()
 
