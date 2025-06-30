@@ -1,37 +1,33 @@
-from flask_restx import fields
+from flask_sqlalchemy import SQLAlchemy
 
-def register_models(api):
-    beer_model = api.model('Beer', {
-        'name': fields.String(required=True),
-        'description': fields.String,
-        'price': fields.Float(required=True),
-        'brewery_id': fields.Integer(required=True),
-        'image_url': fields.String
-    })
+db = SQLAlchemy()
 
-    brewery_model = api.model('Brewery', {
-        'id': fields.Integer,
-        'name': fields.String(required=True),
-        'description': fields.String,
-        'location': fields.String,
-        'image_url': fields.String
-    })
+class Beer(db.Model):
+    __tablename__ = 'beers'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    price = db.Column(db.Float, nullable=False)
+    brewery_id = db.Column(db.Integer, db.ForeignKey('breweries.id'), nullable=False)
+    image_url = db.Column(db.String(255))
 
-    user_model = api.model('User', {
-        'pseudo': fields.String(required=True),
-        'email': fields.String(required=True),
-        'password': fields.String(required=True),
-        'address': fields.String,
-        'phone_number': fields.String,
-    })
+class Brewery(db.Model):
+    __tablename__ = 'breweries'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    address = db.Column(db.String(255))
+    beers = db.relationship('Beer', backref='brewery', lazy=True)
 
-    delivery_model = api.model('Delivery', {
-        'beer_id': fields.Integer(required=True),
-        'quantity': fields.Integer(required=True),
-        'delivery_address': fields.String(required=True),
-        'delivery_date': fields.String(required=True),
-        'status': fields.String(enum=['Pending', 'Delivered', 'Cancelled'], default='Pending'),
-        'user_id': fields.Integer(required=True)
-    })
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(255), unique=True, nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
 
-    return beer_model, brewery_model, user_model, delivery_model
+class Delivery(db.Model):
+    __tablename__ = 'deliveries'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    beer_id = db.Column(db.Integer, db.ForeignKey('beers.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    delivery_date = db.Column(db.DateTime)

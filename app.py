@@ -1,11 +1,10 @@
 from flask import Flask
 from flask_restx import Api
 from flask_cors import CORS
-import redis
+from flask_sqlalchemy import SQLAlchemy
 import os
 
-from models import register_models
-from utils import get_next_id, get_all_items
+from config import SQLALCHEMY_DATABASE_URI
 
 from routes.beers import register_beer_routes
 from routes.breweries import register_brewery_routes
@@ -15,6 +14,11 @@ from routes.deliveries import register_delivery_routes
 app = Flask(__name__)
 front_url = os.getenv("FRONT_URL")
 CORS(app, resources={r"/*": {"origins": front_url}})
+
+app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
 
 @app.after_request
 def after_request(response):
@@ -31,15 +35,13 @@ ns_breweries = api.namespace('breweries', description='Brewery Operations')
 ns_users = api.namespace('users', description='User Operations')
 ns_deliveries = api.namespace('deliveries', description='Delivery Operations')
 
-redis_url = os.getenv("REDIS_URL")
-r = redis.Redis.from_url(redis_url, decode_responses=True)
+# Import models and register routes
+from models import Beer, Brewery, User, Delivery
 
-beer_model, brewery_model, user_model, delivery_model = register_models(api)
-
-register_beer_routes(api, ns_beers, r, beer_model, get_next_id, get_all_items)
-register_brewery_routes(api, ns_breweries, r, brewery_model, get_next_id, get_all_items)
-register_user_routes(api, ns_users, r, user_model, get_next_id, get_all_items)
-register_delivery_routes(api, ns_deliveries, r, delivery_model, get_next_id, get_all_items)
+register_beer_routes(api, ns_beers, db, Beer)
+register_brewery_routes(api, ns_breweries, db, Brewery)
+register_user_routes(api, ns_users, db, User)
+register_delivery_routes(api, ns_deliveries, db, Delivery)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
