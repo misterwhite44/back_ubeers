@@ -2,6 +2,8 @@ from flask_restx import Namespace, Resource, fields
 from models import db, Beer
 import json
 from app import redis_client  # importer le client Redis depuis app.py
+from extensions import redis_client
+
 
 beers_ns = Namespace("beers", description="Beers operations")
 
