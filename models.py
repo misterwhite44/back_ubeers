@@ -10,7 +10,7 @@ class Beer(db.Model):
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False)
     brewery_id = db.Column(db.Integer, db.ForeignKey('breweries.id'), nullable=False)
-    image_url = db.Column(db.String(255))  # uniformisé en image_url
+    image_url = db.Column(db.String(255)) 
 
     brewery = db.relationship('Brewery', back_populates='beers')
     deliveries = db.relationship('Delivery', back_populates='beer', lazy=True)

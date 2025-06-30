@@ -8,8 +8,10 @@ beer_model = beers_ns.model("Beer", {
     "name": fields.String(required=True),
     "type": fields.String,
     "degree": fields.Float,
-    "brewery_id": fields.Integer
+    "brewery_id": fields.Integer,
+    "image_url": fields.String  
 })
+
 
 @beers_ns.route("/")
 class BeerList(Resource):

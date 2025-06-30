@@ -6,7 +6,9 @@ breweries_ns = Namespace("breweries", description="Brewery operations")
 brewery_model = breweries_ns.model("Brewery", {
     "id": fields.Integer(readonly=True),
     "name": fields.String(required=True),
-    "country": fields.String
+    "description": fields.String,
+    "location": fields.String,
+    "image_url": fields.String
 })
 
 @breweries_ns.route("/")
