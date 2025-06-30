@@ -13,7 +13,9 @@ from routes.users import register_user_routes
 from routes.deliveries import register_delivery_routes
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://ubeer-jade.vercel.app"}})
+#CORS(app, resources={r"/*": {"origins": "https://ubeer-jade.vercel.app"}})
+CORS(app, resources={r"/*": {"origins": "localhost:3000, https://ubeer-jade.vercel.app"}})
+
 
 @app.after_request
 def after_request(response):
