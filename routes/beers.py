@@ -1,5 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from models import db, Beer
+from extensions import redis_client
+import redis
 
 beers_ns = Namespace("beers", description="Beers operations")
 
@@ -21,6 +23,17 @@ class BeerTest(Resource):
         import time
         redis_client.lpush("beers_test_logs", f"Test at {time.time()}")
         return {"message": "Test enregistré dans Redis"}, 200
+    
+@beers_ns.route("/test/logs")
+class BeerTestLogs(Resource):
+    def get(self):
+        count = redis_client.get("beers_test_count") or "0"
+        logs = redis_client.lrange("beers_test_logs", 0, 9)  # derniers 10 logs
+        return {
+            "test_count": int(count),
+            "recent_logs": logs
+        }, 200
+
 
 @beers_ns.route("/")
 class BeerList(Resource):
