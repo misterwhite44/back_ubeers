@@ -14,12 +14,12 @@ from routes.deliveries import register_delivery_routes
 
 app = Flask(__name__)
 #CORS(app, resources={r"/*": {"origins": "https://ubeer-jade.vercel.app"}})
-CORS(app, resources={r"/*": {"origins": "localhost:3000"}})
+CORS(app, resources={r"/*": {"origins": "https://ubeer-jade.vercel.app"}})
 
 
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'localhost:3000')
+    response.headers.add('Access-Control-Allow-Origin', 'https://ubeer-jade.vercel.app')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
