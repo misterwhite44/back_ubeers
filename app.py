@@ -88,7 +88,8 @@ class BeersList(Resource):
 
             return jsonify(beers)
         except Error as e:
-            sentry_sdk.capture_exception(e)  # Envoi de l'exception à Sentry
+            sentry_sdk.capture_exception(e)# Envoi de l'exception à Sentry
+            print(f"Error fetching beers: {e}")
             return {'error': str(e)}, 500
         finally:
             if cursor:
