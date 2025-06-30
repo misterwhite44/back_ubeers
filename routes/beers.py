@@ -1,6 +1,8 @@
+import sentry_sdk
 from flask_restx import Namespace, Resource, fields
 from models import db, Beer
 from extensions import redis_client
+from app import app
 import redis
 
 beers_ns = Namespace("beers", description="Beers operations")
@@ -39,7 +41,14 @@ class BeerTestLogs(Resource):
 class BeerList(Resource):
     @beers_ns.marshal_list_with(beer_model)
     def get(self):
-        return Beer.query.all()
+        try:
+            beers = Beer.query.all()
+            return beers
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+            app.logger.error(f"Error fetching beers: {e}")
+            return {'error': str(e)}, 500
+
 
     @beers_ns.expect(beer_model)
     @beers_ns.marshal_with(beer_model, code=201)
