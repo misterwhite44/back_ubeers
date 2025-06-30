@@ -3,6 +3,15 @@ from flask_restx import Api, Resource, fields
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+sentry_sdk.init(
+    dsn="https://50b825ff6e0cfee1b611665ae0c76147@o4509332960509952.ingest.de.sentry.io/4509587000655952",
+    integrations=[FlaskIntegration()],
+    traces_sample_rate=1.0  # Attention : à réduire en prod si nécessaire
+)
+
 
 app = Flask(__name__)
 
@@ -65,26 +74,26 @@ def get_db_connection():
 class BeersList(Resource):
     @ns_beers.doc('list_beers')
     def get(self):
-        """
-        Fetch all beers from the database
-        """
+        connection = None
+        cursor = None
         try:
             connection = get_db_connection()
             cursor = connection.cursor(dictionary=True)
             cursor.execute("SELECT * FROM beers")
             beers = cursor.fetchall()
-            
-            # Vérification que les URLs d'images sont valides
+
             for beer in beers:
                 if 'image_url' in beer and beer['image_url']:
                     beer['image_url'] = beer['image_url']
-            
+
             return jsonify(beers)
         except Error as e:
+            sentry_sdk.capture_exception(e)  # Envoi de l'exception à Sentry
             return {'error': str(e)}, 500
         finally:
-            if connection.is_connected():
+            if cursor:
                 cursor.close()
+            if connection and connection.is_connected():
                 connection.close()
 
     @ns_beers.doc('add_beer')
@@ -498,5 +507,5 @@ class Delivery(Resource):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
 
