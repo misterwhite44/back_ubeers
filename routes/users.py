@@ -1,56 +1,48 @@
-from flask import request, jsonify
-from flask_restx import Resource
+from flask_restx import Namespace, Resource, fields
+from models import db, User
 
-def register_user_routes(api, ns_users, r, user_model, get_next_id, get_all_items):
-    @ns_users.route('/')
-    class UsersList(Resource):
-        def get(self):
-            users = get_all_items(r, "user")
-            return jsonify(users)
+api = Namespace("users", description="User operations")
 
-        @ns_users.expect(user_model)
-        def post(self):
-            data = request.json
-            user_id = get_next_id(r, "user")
-            user_key = f"user:{user_id}"
-            r.hset(user_key, mapping={
-                "id": user_id,
-                "pseudo": data['pseudo'],
-                "email": data['email'],
-                "password": data['password'],
-                "address": data.get('address', ''),
-                "phone_number": data.get('phone_number', '')
-            })
-            return {'message': 'User added successfully', 'id': user_id}, 201
+user_model = api.model("User", {
+    "id": fields.Integer(readonly=True),
+    "email": fields.String(required=True),
+    "password": fields.String(required=True)
+})
 
-    @ns_users.route('/<int:user_id>')
-    class User(Resource):
-        def get(self, user_id):
-            user_key = f"user:{user_id}"
-            if not r.exists(user_key):
-                return {'message': 'User not found'}, 404
-            user = r.hgetall(user_key)
-            user['id'] = int(user['id'])
-            return jsonify(user)
+@api.route("/")
+class UserList(Resource):
+    @api.marshal_list_with(user_model)
+    def get(self):
+        return User.query.all()
 
-        @ns_users.expect(user_model)
-        def put(self, user_id):
-            user_key = f"user:{user_id}"
-            if not r.exists(user_key):
-                return {'message': 'User not found'}, 404
-            data = request.json
-            r.hset(user_key, mapping={
-                "pseudo": data['pseudo'],
-                "email": data['email'],
-                "password": data['password'],
-                "address": data.get('address', ''),
-                "phone_number": data.get('phone_number', '')
-            })
-            return {'message': 'User updated successfully'}, 200
+    @api.expect(user_model)
+    @api.marshal_with(user_model, code=201)
+    def post(self):
+        data = api.payload
+        user = User(**data)
+        db.session.add(user)
+        db.session.commit()
+        return user, 201
 
-        def delete(self, user_id):
-            user_key = f"user:{user_id}"
-            if r.delete(user_key):
-                return {'message': 'User deleted successfully'}, 200
-            else:
-                return {'message': 'User not found'}, 404
+@api.route("/<int:id>")
+@api.response(404, "User not found")
+class UserResource(Resource):
+    @api.marshal_with(user_model)
+    def get(self, id):
+        return User.query.get_or_404(id)
+
+    @api.expect(user_model)
+    @api.marshal_with(user_model)
+    def put(self, id):
+        user = User.query.get_or_404(id)
+        for key, value in api.payload.items():
+            setattr(user, key, value)
+        db.session.commit()
+        return user
+
+    @api.response(204, "User deleted")
+    def delete(self, id):
+        user = User.query.get_or_404(id)
+        db.session.delete(user)
+        db.session.commit()
+        return '', 204

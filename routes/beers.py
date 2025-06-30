@@ -1,107 +1,51 @@
 from flask_restx import Namespace, Resource, fields
-from flask import request, jsonify
-from mysql.connector import Error
-from app import get_db_connection  # importe la fonction de connexion depuis app.py
+from models import db, Beer
 
-ns_beers = Namespace('beers', description='Beer Operations')
+api = Namespace("beers", description="Beers operations")
 
-beer_model = ns_beers.model('Beer', {
-    'name': fields.String(required=True, description='Name of the beer'),
-    'description': fields.String(description='Description of the beer'),
-    'price': fields.Float(required=True, description='Price of the beer'),
-    'brewery_id': fields.Integer(required=True, description='ID of the brewery'),
-    'image_url': fields.String(description='Image URL of the beer')
+beer_model = api.model("Beer", {
+    "id": fields.Integer(readonly=True),
+    "name": fields.String(required=True),
+    "type": fields.String,
+    "degree": fields.Float,
+    "brewery_id": fields.Integer
 })
 
-@ns_beers.route('/')
-class BeersList(Resource):
+@api.route("/")
+class BeerList(Resource):
+    @api.marshal_list_with(beer_model)
     def get(self):
-        try:
-            connection = get_db_connection()
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM beers")
-            beers = cursor.fetchall()
-            return jsonify(beers)
-        except Error as e:
-            return {'error': str(e)}, 500
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
+        return Beer.query.all()
 
-    @ns_beers.expect(beer_model)
+    @api.expect(beer_model)
+    @api.marshal_with(beer_model, code=201)
     def post(self):
-        data = request.json
-        try:
-            connection = get_db_connection()
-            cursor = connection.cursor()
-            cursor.execute(
-                "INSERT INTO beers (name, description, price, brewery_id, image_url) VALUES (%s, %s, %s, %s, %s)",
-                (data['name'], data.get('description'), data['price'], data['brewery_id'], data.get('image_url'))
-            )
-            connection.commit()
-            return {'message': 'Beer added successfully'}, 201
-        except Error as e:
-            return {'error': str(e)}, 500
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
+        data = api.payload
+        beer = Beer(**data)
+        db.session.add(beer)
+        db.session.commit()
+        return beer, 201
 
-@ns_beers.route('/<int:beer_id>')
-class Beer(Resource):
-    def get(self, beer_id):
-        try:
-            connection = get_db_connection()
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM beers WHERE id = %s", (beer_id,))
-            beer = cursor.fetchone()
-            if beer:
-                return jsonify(beer)
-            else:
-                return {'message': 'Beer not found'}, 404
-        except Error as e:
-            return {'error': str(e)}, 500
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
+@api.route("/<int:id>")
+@api.response(404, "Beer not found")
+class BeerResource(Resource):
+    @api.marshal_with(beer_model)
+    def get(self, id):
+        beer = Beer.query.get_or_404(id)
+        return beer
 
-    @ns_beers.expect(beer_model)
-    def put(self, beer_id):
-        data = request.json
-        try:
-            connection = get_db_connection()
-            cursor = connection.cursor()
-            cursor.execute(
-                "UPDATE beers SET name = %s, description = %s, price = %s, brewery_id = %s, image_url = %s WHERE id = %s",
-                (data['name'], data.get('description'), data['price'], data['brewery_id'], data.get('image_url'), beer_id)
-            )
-            connection.commit()
-            if cursor.rowcount:
-                return {'message': 'Beer updated successfully'}, 200
-            else:
-                return {'message': 'Beer not found'}, 404
-        except Error as e:
-            return {'error': str(e)}, 500
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
+    @api.expect(beer_model)
+    @api.marshal_with(beer_model)
+    def put(self, id):
+        beer = Beer.query.get_or_404(id)
+        for key, value in api.payload.items():
+            setattr(beer, key, value)
+        db.session.commit()
+        return beer
 
-    def delete(self, beer_id):
-        try:
-            connection = get_db_connection()
-            cursor = connection.cursor()
-            cursor.execute("DELETE FROM beers WHERE id = %s", (beer_id,))
-            connection.commit()
-            if cursor.rowcount:
-                return {'message': 'Beer deleted successfully'}, 200
-            else:
-                return {'message': 'Beer not found'}, 404
-        except Error as e:
-            return {'error': str(e)}, 500
-        finally:
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
+    @api.response(204, "Beer deleted")
+    def delete(self, id):
+        beer = Beer.query.get_or_404(id)
+        db.session.delete(beer)
+        db.session.commit()
+        return '', 204
