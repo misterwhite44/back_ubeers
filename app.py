@@ -5,14 +5,14 @@ from routes import api as routes_namespace
 import pymysql
 import os
 from dotenv import load_dotenv
-
 pymysql.install_as_MySQLdb()
 
-load_dotenv()
+load_dotenv() 
+
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "mysql+pymysql://user:password@host:port/dbname?charset=utf8mb4"
+    "mysql+pymysql://uuw6sv5bvs11qa51:md1HTCoAHEg0s4HbJHGc@bwawmx4ntfjwzxxrotz4-mysql.services.clever-cloud.com:3306/bwawmx4ntfjwzxxrotz4?charset=utf8mb4"
 )
 
 CORS(app, origins=[os.getenv("FRONT_URL")])
