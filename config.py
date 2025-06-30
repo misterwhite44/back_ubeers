@@ -17,5 +17,10 @@ class Config:
         'password': os.getenv("DB_PASSWORD"),
         'database': os.getenv("DB_NAME"),
         'charset': os.getenv("DB_CHARSET", 'utf8mb4')
-}
 
+    
+}
+SQLALCHEMY_DATABASE_URI = (
+    f"mysql+pymysql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@"
+    f"{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}?charset={DB_CONFIG['charset']}"
+)

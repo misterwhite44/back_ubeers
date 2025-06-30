@@ -1,63 +1,107 @@
+from flask_restx import Namespace, Resource, fields
 from flask import request, jsonify
-from flask_restx import Resource
+from mysql.connector import Error
+from app import get_db_connection  # importe la fonction de connexion depuis app.py
 
-def register_beer_routes(api, ns_beers, r, beer_model, get_next_id, get_all_items):
-    @ns_beers.route('/')
-    class BeersList(Resource):
-        @ns_beers.doc('list_beers')
-        def get(self):
-            beers = get_all_items(r, "beer")
+ns_beers = Namespace('beers', description='Beer Operations')
+
+beer_model = ns_beers.model('Beer', {
+    'name': fields.String(required=True, description='Name of the beer'),
+    'description': fields.String(description='Description of the beer'),
+    'price': fields.Float(required=True, description='Price of the beer'),
+    'brewery_id': fields.Integer(required=True, description='ID of the brewery'),
+    'image_url': fields.String(description='Image URL of the beer')
+})
+
+@ns_beers.route('/')
+class BeersList(Resource):
+    def get(self):
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM beers")
+            beers = cursor.fetchall()
             return jsonify(beers)
+        except Error as e:
+            return {'error': str(e)}, 500
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
 
-        @ns_beers.doc('add_beer')
-        @ns_beers.expect(beer_model)
-        def post(self):
-            data = request.json
-            beer_id = get_next_id(r, "beer")
-            beer_key = f"beer:{beer_id}"
-            r.hset(beer_key, mapping={
-                "id": beer_id,
-                "name": data['name'],
-                "description": data.get('description', ''),
-                "price": data['price'],
-                "brewery_id": data['brewery_id'],
-                "image_url": data.get('image_url', '')
-            })
-            return {'message': 'Beer added successfully', 'id': beer_id}, 201
+    @ns_beers.expect(beer_model)
+    def post(self):
+        data = request.json
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor()
+            cursor.execute(
+                "INSERT INTO beers (name, description, price, brewery_id, image_url) VALUES (%s, %s, %s, %s, %s)",
+                (data['name'], data.get('description'), data['price'], data['brewery_id'], data.get('image_url'))
+            )
+            connection.commit()
+            return {'message': 'Beer added successfully'}, 201
+        except Error as e:
+            return {'error': str(e)}, 500
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
 
-    @ns_beers.route('/<int:beer_id>')
-    class Beer(Resource):
-        @ns_beers.doc('get_beer')
-        def get(self, beer_id):
-            beer_key = f"beer:{beer_id}"
-            if not r.exists(beer_key):
+@ns_beers.route('/<int:beer_id>')
+class Beer(Resource):
+    def get(self, beer_id):
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM beers WHERE id = %s", (beer_id,))
+            beer = cursor.fetchone()
+            if beer:
+                return jsonify(beer)
+            else:
                 return {'message': 'Beer not found'}, 404
-            beer = r.hgetall(beer_key)
-            beer['id'] = int(beer['id'])
-            beer['brewery_id'] = int(beer['brewery_id'])
-            beer['price'] = float(beer['price'])
-            return jsonify(beer)
+        except Error as e:
+            return {'error': str(e)}, 500
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
 
-        @ns_beers.doc('update_beer')
-        @ns_beers.expect(beer_model)
-        def put(self, beer_id):
-            beer_key = f"beer:{beer_id}"
-            if not r.exists(beer_key):
+    @ns_beers.expect(beer_model)
+    def put(self, beer_id):
+        data = request.json
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor()
+            cursor.execute(
+                "UPDATE beers SET name = %s, description = %s, price = %s, brewery_id = %s, image_url = %s WHERE id = %s",
+                (data['name'], data.get('description'), data['price'], data['brewery_id'], data.get('image_url'), beer_id)
+            )
+            connection.commit()
+            if cursor.rowcount:
+                return {'message': 'Beer updated successfully'}, 200
+            else:
                 return {'message': 'Beer not found'}, 404
-            data = request.json
-            r.hset(beer_key, mapping={
-                "name": data['name'],
-                "description": data.get('description', ''),
-                "price": data['price'],
-                "brewery_id": data['brewery_id'],
-                "image_url": data.get('image_url', '')
-            })
-            return {'message': 'Beer updated successfully'}, 200
+        except Error as e:
+            return {'error': str(e)}, 500
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
 
-        @ns_beers.doc('delete_beer')
-        def delete(self, beer_id):
-            beer_key = f"beer:{beer_id}"
-            if r.delete(beer_key):
+    def delete(self, beer_id):
+        try:
+            connection = get_db_connection()
+            cursor = connection.cursor()
+            cursor.execute("DELETE FROM beers WHERE id = %s", (beer_id,))
+            connection.commit()
+            if cursor.rowcount:
                 return {'message': 'Beer deleted successfully'}, 200
             else:
                 return {'message': 'Beer not found'}, 404
+        except Error as e:
+            return {'error': str(e)}, 500
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
